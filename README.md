@@ -18,6 +18,14 @@ npm i -S bash-exec
 
 Пример образования "забытого" в фоне процесса вы можете найти в файле `ex5-without-killChild.es6`. А пример корректного завершения фоновых процессов перед выходом в файле `examples/ex6-with-killChild`.
 
+### API
+
+* `bashExec(cmd[, options ]) -> Promise`: 
+  * `cmd` - a string containing the command(s)
+  * `options` - [spawn options](https://nodejs.org/api/child_process.html#child_process_child_process_spawn_command_args_options), `detached` option will be ignored. Default: `{ detached: true }`.
+* `bashExec.killChilds([ signal ]) -> undefined`:
+  * `signal` - a string containing the [signal name](https://nodejs.org/api/process.html#process_signal_events). Default: `SIGINT`   
+
 ### Examples
 
 ```js
