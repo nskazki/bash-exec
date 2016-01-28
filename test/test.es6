@@ -57,4 +57,12 @@ describe('bash-exec', () => {
         res => P.reject(new Error(`process resolved, but must be rejected: ${inspect(res)}`)),
         err => assert.ok(err.signal === 'SIGTERM')))
   })
+
+  it('run cmd with additional options', () => {
+    let env = { HELLO: 'WORLD!' }
+
+    return bashExec(`echo $HELLO`, { env }).then(res => {
+      assert.ok(res.stdout === 'WORLD!')
+    })
+  })
 })

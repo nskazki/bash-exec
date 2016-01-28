@@ -1,7 +1,7 @@
 'use strict'
 
 import { trim, forEach, assign,
-  isNull, isObject, isString } from 'lodash'
+  pick, isNull, isObject, isString } from 'lodash'
 import { debugEvents } from 'simple-debugger'
 import { spawn } from 'child_process'
 import { inspect } from 'util'
@@ -27,7 +27,7 @@ function killChilds(signal = 'SIGINT') {
   })
 }
 
-function bashExec(cmd) {
+function bashExec(cmd, options = {}) {
   let cmdId = ++counter
   beDebug(cmdId, 'init', cmd)
 
@@ -127,18 +127,23 @@ function bashExec(cmd) {
     }
 
     let onStdout = () => {
-      beDebug(cmdId, { stdout })
+      beDebug(cmdId, 'onStdout', { stdout })
       isStdoutEnd = true
       onEnd()
     }
 
     let onStderr = () => {
-      beDebug(cmdId, { stderr })
+      beDebug(cmdId, 'onStderr', { stderr })
       isStderrEnd = true
       onEnd()
     }
 
-    let child = spawn('bash', [ '-c', cmd ], { detached: true })
+    let spawnOptions = assign(
+      pick(options, 'cwd', 'env', 'stdio', 'uid', 'gid'),
+      { detached: true })
+    beDebug(cmdId, 'spawnOptions', spawnOptions)
+
+    let child = spawn('bash', [ '-c', cmd ], spawnOptions)
     childProcesses[child.pid] = child
     debugEvents(child, [], `bash-exec-child-${cmdId}`)
 
