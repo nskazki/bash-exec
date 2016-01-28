@@ -8,6 +8,17 @@ npm i -S bash-exec
 
 ### Warning
 
+##### EN
+
+Why you possibly don't want to use this library!
+
+Every bash command is being ran in separate process, which continues to work even when your app finished. For example, if you ran `bashExec('cat /dev/urandom > /tmp/urandom-mirror')` in your app and kill it (the app), you will see soon that your disk space ran out.
+
+To kill all the generated bash processes before exit use command `bashExec.killChilds([ SIGNAL = 'SIGINT' ])`. It would be nice to define a listener of system signals that would call the function before the app finishing.
+Btw, you can call the function more that once but if you do this you probably doing something wrong.
+
+You can find example of forgotten backgroung process in the file `ex5-without-killChild.es6`, and example of correct finishing background processes before exit in  `examples/ex6-with-killChild`.
+
 ##### RU
 
 Возможно вам не стоит пользоваться этой библиотекой!
