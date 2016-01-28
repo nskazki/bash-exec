@@ -21,9 +21,8 @@ function killChilds(signal = 'SIGINT') {
   forEach(childProcesses, child => {
     delete childProcesses[child.pid]
 
-    if (child.__killedByBashExec__) return
-    child.__killedByBashExec__ = true
-    process.kill(-child.pid, signal)
+    beDebug(child.__cmdId__, 'killChilds - tryKill', { pid: child.pid, signal })
+    tryKill(-child.pid, signal)
   })
 }
 
@@ -42,6 +41,7 @@ function bashExec(cmd, options = {}) {
   let isStderrEnd = false
   let isError = false
   let isExit = false
+  let isClose = false
   let isSignal = false
 
   return new P((resolve, reject) => {
@@ -49,23 +49,23 @@ function bashExec(cmd, options = {}) {
       let skipNormal = !(true
         && isStderrEnd
         && isStdoutEnd
-        && (isError || isExit))
-      let skipSignal = !(isExit && isSignal)
+        && (isError || (isExit && isClose)))
+      let skipSignal = true || !(isExit && isClose && isSignal)
 
       if (skipNormal && skipSignal) {
         beDebug(cmdId, 'onEnd-skip',
-          { isStdoutEnd, isStderrEnd, isExit, isError })
+          { isStdoutEnd, isStderrEnd, isExit, isError, isClose })
         return
       }
 
       delete childProcesses[child.pid]
 
-      beDebug(cmdId, 'onEnd-process',
-        { isStdoutEnd, isStderrEnd, isError, isExit })
-      beDebug(cmdId, { stdout, stderr, signal, code })
-
       stdout = trim(stdout.toString())
       stderr = trim(stderr.toString())
+
+      beDebug(cmdId, 'onEnd-process',
+        { isStdoutEnd, isStderrEnd, isError, isExit, isClose })
+      beDebug(cmdId, 'onEnd-results', { stdout, stderr, signal, code })
 
       if (isError) {
         let message = `bashExec problem - onError!\
@@ -96,10 +96,10 @@ function bashExec(cmd, options = {}) {
       } else {
         let error = new Error(`bashExec internal problem!\
           \n\t err: the script is not completed, but the handler did not think so\
-          \n\t ext: ${tab(inspect({ cmd, err, code, signal, stdout, stderr }))}\
-          \n\t our: ${tab(inspect({ cmdId, isError, isExit, isStdoutEnd, isStderrEnd }))}`)
+          \n\t ext: ${tab(inspect({ cmd, err, code, signal, stdout, stderr, cmdId }))}\
+          \n\t our: ${tab(inspect({ isStdoutEnd, isStderrEnd, isError, isExit, isClose }))}`)
         assign(error, { cmd, err, code, signal, stdout, stderr, cmdId,
-          isError, isExit, isStdoutEnd, isStderrEnd })
+          isStdoutEnd, isStderrEnd, isError, isExit, isClose })
         return reject(error)
       }
     }
@@ -112,16 +112,23 @@ function bashExec(cmd, options = {}) {
     }
 
     let onExit = (_code, _signal) => {
+      isExit = true
+
+      if (!isNull(_signal)) {
+        beDebug(cmdId, 'onExit - tryKill', { pid: child.pid, _signal })
+        tryKill(-child.pid, _signal)
+      }
+
+      onEnd()
+    }
+
+    let onClose = (_code, _signal) => {
       code = _code
       signal = _signal
-      beDebug(cmdId, 'onExit', { code, signal })
+      beDebug(cmdId, 'onClose', { code, signal })
 
-      isExit = true
+      isClose = true
       isSignal = !isNull(signal)
-      if (isSignal && !child.__killedByBashExec__) {
-        child.__killedByBashExec__ = true
-        process.kill(-child.pid, signal)
-      }
 
       onEnd()
     }
@@ -144,12 +151,16 @@ function bashExec(cmd, options = {}) {
     beDebug(cmdId, 'spawnOptions', spawnOptions)
 
     let child = spawn('bash', [ '-c', cmd ], spawnOptions)
+
+    child.__cmdId__ = cmdId
     childProcesses[child.pid] = child
+    beDebug(cmdId, 'child.pid', child.pid)
     debugEvents(child, [], `bash-exec-child-${cmdId}`)
 
     child
       .on('error', onError)
       .on('exit', onExit)
+      .on('close', onClose)
     child.stdout
       .on('data', chank => stdout += chank)
       .on('end', onStdout)
@@ -157,4 +168,15 @@ function bashExec(cmd, options = {}) {
       .on('data', chank => stderr += chank)
       .on('end', onStderr)
   })
+}
+
+// helpers
+
+function tryKill(pid, signal) {
+  try {
+    return process.kill(pid, signal)
+  } catch (err) {
+    if (err.message === 'kill ESRCH') return `${pid} already killed!`
+    else throw err
+  }
 }
