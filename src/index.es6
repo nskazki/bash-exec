@@ -21,8 +21,9 @@ function killChilds(signal = 'SIGINT') {
   forEach(childProcesses, child => {
     delete childProcesses[child.pid]
 
-    beDebug(child.__cmdId__, 'killChilds - tryKill', { pid: child.pid, signal })
-    tryKill(-child.pid, signal)
+    beDebug(child.__cmdId__, '#killChilds - tryKill', { pid: child.pid, signal })
+    let killRes = tryKill(-child.pid, signal)
+    beDebug(child.__cmdId__, '#killChilds - killRes', killRes)
   })
 }
 
@@ -116,7 +117,8 @@ function bashExec(cmd, options = {}) {
 
       if (!isNull(_signal)) {
         beDebug(cmdId, 'onExit - tryKill', { pid: child.pid, _signal })
-        tryKill(-child.pid, _signal)
+        let killRes = tryKill(-child.pid, _signal)
+        beDebug(cmdId, 'onExit - killRes', killRes)
       }
 
       onEnd()
