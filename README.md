@@ -8,7 +8,7 @@ npm i -S bash-exec
 
 ### Demo
 
-[![demo](https://asciinema.org/a/bwbko2vt5008o11iwatl4icda.png)](https://asciinema.org/a/bwbko2vt5008o11iwatl4icda?autoplay=1)
+[![demo](https://asciinema.org/a/1y4r1kejrvpxpernvdn5zma0b.png)](https://asciinema.org/a/1y4r1kejrvpxpernvdn5zma0b?autoplay=1)
  
 ### Warning
 
