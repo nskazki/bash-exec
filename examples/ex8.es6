@@ -29,6 +29,6 @@ bashExec(`
   (
     sleep 12
     cowsay "ta-da :)"
-  )
+  ) &
 
 `).then(res => console.log(res.stdout), console.error)
