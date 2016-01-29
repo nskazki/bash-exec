@@ -6,6 +6,10 @@ Like `spawn('bash', [ '-c', cmd ])`, but with better error handling.
 npm i -S bash-exec
 ```
 
+### Demo
+
+[![demo](https://asciinema.org/a/bwbko2vt5008o11iwatl4icda.png)](https://asciinema.org/a/bwbko2vt5008o11iwatl4icda?autoplay=1)
+ 
 ### Warning
 
 ##### EN
